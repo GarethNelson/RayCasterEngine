@@ -121,7 +121,6 @@ void update() {
     oldTime = time;
     time = SDL_GetTicks();
     double frameTime = (time - oldTime) / 1000.0; //frameTime is the time this frame has taken, in seconds
-
     moveSpeed = frameTime * 15.0; //the constant value is in squares/second
     rotSpeed = frameTime * 2.5; //the constant value is in radians/second
      while (SDL_PollEvent(&e)) {
@@ -273,6 +272,8 @@ int main() {
     SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 5 );
     SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 );
     SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,32);
     SDL_GL_SetSwapInterval(1);
 
     SDL_DisplayMode disp_mode;
@@ -291,7 +292,10 @@ int main() {
     glLoadIdentity();
     glClearColor( 0.0, 0.0, 0.0, 1 );
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-   
+    glDisable( GL_LINE_SMOOTH );
+    glDisable( GL_POLYGON_SMOOTH );
+    glEnable(GL_MULTISAMPLE); 
+ 
     while(1) {
        SDL_PumpEvents();
        update();
