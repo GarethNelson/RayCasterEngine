@@ -143,8 +143,22 @@ void render() {
      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_ACCUM_BUFFER_BIT);
      glLoadIdentity();
 
-
-
+     for(int y=(screen_h/2); y > 0; y--) {
+         glBegin(GL_LINES);
+          glColor4f(0.0,0.0,0.5,((float)y/(screen_h/2)*bright_adjust));
+          glVertex2f(0,(float)y);
+          glVertex2f(screen_w,(float)y);
+         glEnd();
+     }
+     for(int y=(screen_h/2); y < screen_h; y++) {
+         float line_alpha = (float)y;
+         line_alpha -= (screen_h/2);
+         glBegin(GL_LINES);
+          glColor4f(0.5,0.5,0.5,line_alpha/(screen_h/2)*bright_adjust);
+          glVertex2f(0,(float)y);
+          glVertex2f(screen_w,(float)y);
+         glEnd();
+     } 
 
      for(int x=0; x < screen_w; x++) {
    double cameraX = 2 * x / ((double)screen_w) - 1; //x-coordinate in camera space
@@ -223,9 +237,14 @@ void render() {
       if(drawStart < 0)drawStart = 0;
       int drawEnd = lineHeight / 2 + screen_h / 2;
       if(drawEnd >= screen_h)drawEnd = screen_h - 1;
+      glDisable(GL_BLEND);
+      glBegin(GL_LINES);
+        glColor3f(0.0,0.0,0.0);
+        glVertex2f(x,drawStart);
+        glVertex2f(x,drawEnd);
+      glEnd();
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-      glDisable(GL_DEPTH_TEST);
 
 
          glBegin(GL_LINES);
