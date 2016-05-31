@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int screen_w;
 int screen_h;
 
-double posX = 22, posY = 12;  //x and y start position
+double posX = 22, posY = 11.5;  //x and y start position
 double dirX = -1, dirY = 0; //initial direction vector
 double planeX = 0, planeY = 0.66; //the 2d raycaster version of camera plane
 
@@ -156,7 +156,7 @@ void render() {
           glVertex2f(screen_w,(float)y);
          glEnd();
      }
-     for(int y=(screen_h/2); y < screen_h; y++) {
+/*     for(int y=(screen_h/2); y < screen_h; y++) {
          float line_alpha = (float)y;
          line_alpha -= (screen_h/2);
          glBegin(GL_LINES);
@@ -164,7 +164,19 @@ void render() {
           glVertex2f(0,(float)y);
           glVertex2f(screen_w,(float)y);
          glEnd();
-     } 
+     } */
+/*     glEnable(GL_TEXTURE_2D);
+     glBindTexture(GL_TEXTURE_2D, textures[7]);
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
+     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+     glColor4f(1.0,1.0,1.0,1.0);
+     glBegin(GL_QUADS);
+            glTexCoord2f(0.0f, 0.0f); glVertex2f(0, screen_h/2);
+            glTexCoord2f(screen_w/256, 0.0f); glVertex2f(screen_w, screen_h/2 );
+            glTexCoord2f(screen_w/256, (screen_h/2)/256); glVertex2f(screen_w,  screen_h );
+            glTexCoord2f(0.0f, (screen_h/2)/256); glVertex2f(0,  screen_h );
+     glEnd();*/
+     glDisable(GL_TEXTURE_2D);
      glDisable(GL_BLEND);
 
      for(int x=0; x < screen_w; x++) {
@@ -301,14 +313,68 @@ glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
             glTexCoord2f(texX/256.0f, 1.0f); glVertex2f(x,  drawEnd);
 
          glEnd();
-         draw_ends[x] = drawEnd;
-         line_heights[x] = lineHeight;
-         glDisable(GL_TEXTURE_2D); 
-     
+//FLOOR CASTING
+      double floorXWall, floorYWall; //x, y position of the floor texel at the bottom of the wall
+
+      //4 different wall directions possible
+      if(side == 0 && rayDirX > 0)
+      {
+        floorXWall = mapX;
+        floorYWall = mapY + wallX;
+      }
+      else if(side == 0 && rayDirX < 0)
+      {
+        floorXWall = mapX + 1.0;
+        floorYWall = mapY + wallX;
+      }
+      else if(side == 1 && rayDirY > 0)
+      {
+        floorXWall = mapX + wallX;
+        floorYWall = mapY;
+      }
+      else
+      {
+        floorXWall = mapX + wallX;
+        floorYWall = mapY + 1.0;
+      }
+          
+double distWall, distPlayer, currentDist;
+
+      distWall = perpWallDist;
+      distPlayer = 0.0;
+        glBindTexture(GL_TEXTURE_2D, textures[7]);
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+     glDisable(GL_BLEND);
+     int y;
+     int floorTexX,floorTexY;
+     double weight;
+glBindTexture(GL_TEXTURE_2D, textures[7]);
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
+     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+
+     glBegin(GL_POINTS);
+     for(int y = drawEnd + 1; y < screen_h; y++) {
+        currentDist = screen_h / (2.0 * y - screen_h); //you could make a small lookup table for this instead
+
+        weight = (currentDist - distPlayer) / (distWall - distPlayer);
+
+        double currentFloorX = weight * floorXWall + (1.0 - weight) * posX;
+        double currentFloorY = weight * floorYWall + (1.0 - weight) * posY;
+
+        int floorTexX, floorTexY;
+        floorTexX = (((int)currentFloorX)%256) * 256;
+        floorTexY = (((int)currentFloorY)%256) * 256;
+
+
+//          glTexCoord2f(floorTexX,floorTexY); glVertex2f(x,y);
+        glTexCoord2f(currentFloorX,currentFloorY); glVertex2f(x,y);
+      }
+      glEnd(); 
 
     
      }
-
+     glDisable(GL_TEXTURE_2D);
 }
 
 void load_gl_textures() {
