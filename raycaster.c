@@ -43,8 +43,6 @@ double posX = 22, posY = 11.5;  //x and y start position
 double dirX = -1, dirY = 0; //initial direction vector
 double planeX = 0, planeY = 0.66; //the 2d raycaster version of camera plane
 
-double *draw_ends;
-double *line_heights;
 
 double time = 0; //time of current frame
 double oldTime = 0; //time of previous frame
@@ -93,33 +91,31 @@ int worldMap[mapWidth][mapHeight]=
 };
 
 void handle_key_event(SDL_Event *e) {
-     switch(e->key.keysym.sym) {
-        case SDLK_UP:
+     Uint8 *keystate = SDL_GetKeyboardState(NULL);
+     if(keystate[SDL_GetScancodeFromKey(SDLK_UP)]) {
          if(worldMap[(int)(posX + dirX * moveSpeed)][(int)posY] == false) posX += dirX * moveSpeed;
          if(worldMap[((int)posX)][(int)(posY + dirY * moveSpeed)] == false) posY += dirY * moveSpeed;
-        break;
-        case SDLK_DOWN:
+     }
+     if(keystate[SDL_GetScancodeFromKey(SDLK_DOWN)]) {
          if(worldMap[(int)(posX - dirX * moveSpeed)][(int)(posY)] == false) posX -= dirX * moveSpeed;
          if(worldMap[(int)(posX)][(int)(posY - dirY * moveSpeed)] == false) posY -= dirY * moveSpeed;
-        break;
-        case SDLK_LEFT:
+     }
+     if(keystate[SDL_GetScancodeFromKey(SDLK_LEFT)]) {
        oldDirX = dirX;
       dirX = dirX * cos(rotSpeed) - dirY * sin(rotSpeed);
       dirY = oldDirX * sin(rotSpeed) + dirY * cos(rotSpeed);
       oldPlaneX = planeX;
       planeX = planeX * cos(rotSpeed) - planeY * sin(rotSpeed);
       planeY = oldPlaneX * sin(rotSpeed) + planeY * cos(rotSpeed);
-        break;
-        case SDLK_RIGHT:
+     }
+     if(keystate[SDL_GetScancodeFromKey(SDLK_RIGHT)]) {
       oldDirX = dirX;
       dirX = dirX * cos(-rotSpeed) - dirY * sin(-rotSpeed);
       dirY = oldDirX * sin(-rotSpeed) + dirY * cos(-rotSpeed);
        oldPlaneX = planeX;
       planeX = planeX * cos(-rotSpeed) - planeY * sin(-rotSpeed);
       planeY = oldPlaneX * sin(-rotSpeed) + planeY * cos(-rotSpeed);
-
-        break;
-     }
+      }
      
 }
 
@@ -130,18 +126,15 @@ void update() {
     frameTime = (time - oldTime) / 1000.0; //frameTime is the time this frame has taken, in seconds
     moveSpeed = frameTime * 3.0; //the constant value is in squares/second
     rotSpeed = frameTime * 2.5; //the constant value is in radians/second
+    handle_key_event(&e);
      while (SDL_PollEvent(&e)) {
         switch(e.type) {
            case SDL_QUIT:
               exit(0);
            break;
-           case SDL_KEYDOWN:
-              handle_key_event(&e);
-           break;
         }
 
      }
-
 
 }
 
@@ -401,7 +394,7 @@ int main() {
     SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 2);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,32);
-//    SDL_GL_SetSwapInterval(1);
+    SDL_GL_SetSwapInterval(1);
 
     SDL_DisplayMode disp_mode;
     SDL_GetDesktopDisplayMode(0, &disp_mode);
@@ -409,10 +402,8 @@ int main() {
     screen = SDL_CreateWindow("Raycasting test",SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,640,480,
                                               SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE);
     SDL_GL_GetDrawableSize(screen, &screen_w, &screen_h);
-
-    draw_ends = malloc(sizeof(double)*screen_w);
-    line_heights = malloc(sizeof(double)*screen_w);
     glcontext = SDL_GL_CreateContext(screen);
+
     glMatrixMode( GL_PROJECTION );
     glLoadIdentity();
     glOrtho( 0.0, screen_w, screen_h, 0.0, 1.0, -1.0 );
