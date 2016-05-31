@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdio.h>
 #include <SDL.h>
+#include <SOIL.h>
 #if defined(__APPLE__)
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
@@ -56,6 +57,8 @@ SDL_GLContext glcontext;
 #define mapWidth 24
 #define mapHeight 24
 #define bright_adjust 1.2
+
+unsigned int textures[6];
 
 int worldMap[mapWidth][mapHeight]=
 {
@@ -236,7 +239,20 @@ void render() {
       if(drawStart < 0)drawStart = 0;
       int drawEnd = lineHeight / 2 + screen_h / 2;
       if(drawEnd >= screen_h)drawEnd = screen_h - 1;
+
+     double wallX; //where exactly the wall was hit
+      if (side == 0) wallX = rayPosY + perpWallDist * rayDirY;
+      else           wallX = rayPosX + perpWallDist * rayDirX;
+      wallX -= floor((wallX));
+
+      //x coordinate on the texture
+      double texX = (wallX * 256.0);
+      if(side == 0 && rayDirX > 0) texX = 256 - texX - 1;
+      if(side == 1 && rayDirY < 0) texX = 256 - texX - 1; 
+
+
       glDisable(GL_BLEND);
+      glLineWidth(1.0);
       glBegin(GL_LINES);
         glColor3f(0.0,0.0,0.0);
         glVertex2f(x,drawStart);
@@ -245,11 +261,27 @@ void render() {
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+      glEnable(GL_TEXTURE_2D);
+      glBindTexture(GL_TEXTURE_2D, textures[1]);
+glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+         glBegin(GL_QUADS);
+            glColor4f(0.9,0.9,0.9,((float)lineHeight/screen_h)*bright_adjust);
+            glTexCoord2f(texX/256.0f, 0.0f); glVertex2f(x, drawStart);
 
-         glBegin(GL_LINES);
+            glColor4f(0.9,0.9,0.9,((float)lineHeight/screen_h)*bright_adjust);
+            glTexCoord2f(texX/256.0f, 0.0f); glVertex2f(x+5, drawStart );
+
+            glColor4f(1.0,1.0,1.0,((float)lineHeight/screen_h)*bright_adjust);
+            glTexCoord2f(texX/256.0f, 0.5f); glVertex2f(x+5,  drawEnd-(lineHeight/2) );
+
+            glColor4f(1.0,1.0,1.0,((float)lineHeight/screen_h)*bright_adjust);
+            glTexCoord2f(texX/256.0f, 0.5f); glVertex2f(x,  drawEnd-(lineHeight/2) );
+/*          glTexCoord2f(texX,0);
           glColor4f(0.9,0.9,0.9,((float)lineHeight/screen_h)*bright_adjust);
           glVertex2f(x,drawStart);
 
+          glTexCoord2f(texX,128);
           glColor4f(1.0,1.0,1.0,((float)lineHeight/screen_h)*bright_adjust);
           glVertex2f(x,drawStart + ((drawEnd-drawStart)/2));
 
@@ -257,10 +289,16 @@ void render() {
           glVertex2f(x,drawStart + ((drawEnd-drawStart)/2));
 
           glColor4f(0.9,0.9,0.9,((float)lineHeight/screen_h)*bright_adjust);
-          glVertex2f(x,drawEnd);
+          glVertex2f(x,drawEnd);*/
          glEnd();
      }
+     glDisable(GL_TEXTURE_2D);
+}
 
+void load_gl_textures() {
+     textures[1] = SOIL_load_OGL_texture("texture1.png",0,0,SOIL_LOAD_AUTO);
+     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 }
 
 int main() {
@@ -272,7 +310,7 @@ int main() {
     SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 5 );
     SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 );
     SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 2);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,32);
     SDL_GL_SetSwapInterval(1);
 
@@ -295,6 +333,8 @@ int main() {
     glDisable( GL_LINE_SMOOTH );
     glDisable( GL_POLYGON_SMOOTH );
     glEnable(GL_MULTISAMPLE); 
+
+    load_gl_textures();
  
     while(1) {
        SDL_PumpEvents();
