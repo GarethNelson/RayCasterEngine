@@ -145,6 +145,7 @@ void render() {
      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_ACCUM_BUFFER_BIT);
      glLoadIdentity();
 
+     glEnable(GL_BLEND);
      for(int y=(screen_h/2); y > 0; y--) {
          glBegin(GL_LINES);
           glColor4f(0.0,0.0,0.5,((float)y/(screen_h/2)*bright_adjust));
@@ -161,6 +162,7 @@ void render() {
           glVertex2f(screen_w,(float)y);
          glEnd();
      } 
+     glDisable(GL_BLEND);
 
      for(int x=0; x < screen_w; x++) {
    double cameraX = 2 * x / ((double)screen_w) - 1; //x-coordinate in camera space
@@ -236,9 +238,9 @@ void render() {
 
       //calculate lowest and highest pixel to fill in current stripe
       int drawStart = -lineHeight / 2 + screen_h / 2;
-      if(drawStart < 0)drawStart = 0;
+//      if(drawStart < 0)drawStart = 0;
       int drawEnd = lineHeight / 2 + screen_h / 2;
-      if(drawEnd >= screen_h)drawEnd = screen_h - 1;
+//      if(drawEnd >= screen_h)drawEnd = screen_h - 1;
 
      double wallX; //where exactly the wall was hit
       if (side == 0) wallX = rayPosY + perpWallDist * rayDirY;
@@ -265,18 +267,35 @@ void render() {
       glBindTexture(GL_TEXTURE_2D, textures[1]);
 glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+      float col_adjust;
          glBegin(GL_QUADS);
-            glColor4f(0.9,0.9,0.9,((float)lineHeight/screen_h)*bright_adjust);
+            col_adjust=((float)lineHeight/screen_h)*4;
+
+            glColor4f(0.9,0.9,0.9,col_adjust);
             glTexCoord2f(texX/256.0f, 0.0f); glVertex2f(x, drawStart);
 
-            glColor4f(0.9,0.9,0.9,((float)lineHeight/screen_h)*bright_adjust);
-            glTexCoord2f(texX/256.0f, 0.0f); glVertex2f(x+5, drawStart );
+            glColor4f(0.9,0.9,0.9,col_adjust);
+            glTexCoord2f((texX)/256.0f, 0.0f); glVertex2f(x+.5, drawStart );
 
-            glColor4f(1.0,1.0,1.0,((float)lineHeight/screen_h)*bright_adjust);
-            glTexCoord2f(texX/256.0f, 0.5f); glVertex2f(x+5,  drawEnd-(lineHeight/2) );
+            glColor4f(1.0,1.0,1.0,col_adjust);
+            glTexCoord2f((texX)/256.0f, 0.5f); glVertex2f(x+.5,  drawEnd-(lineHeight/2) );
 
-            glColor4f(1.0,1.0,1.0,((float)lineHeight/screen_h)*bright_adjust);
+            glColor4f(1.0,1.0,1.0,col_adjust);
             glTexCoord2f(texX/256.0f, 0.5f); glVertex2f(x,  drawEnd-(lineHeight/2) );
+
+
+            glColor4f(1.0,1.0,1.0,col_adjust);
+            glTexCoord2f(texX/256.0f, 0.5f); glVertex2f(x, drawStart+(lineHeight/2));
+
+            glColor4f(1.0,1.0,1.0,col_adjust);
+            glTexCoord2f((texX)/256.0f, 0.5f); glVertex2f(x+.5, drawStart+(lineHeight/2) );
+
+            glColor4f(0.9,0.9,0.9,col_adjust);
+            glTexCoord2f((texX)/256.0f, 1.0f); glVertex2f(x+.5,  drawEnd);
+
+            glColor4f(0.9,0.9,0.9,col_adjust);
+            glTexCoord2f(texX/256.0f, 1.0f); glVertex2f(x,  drawEnd);
+
 /*          glTexCoord2f(texX,0);
           glColor4f(0.9,0.9,0.9,((float)lineHeight/screen_h)*bright_adjust);
           glVertex2f(x,drawStart);
