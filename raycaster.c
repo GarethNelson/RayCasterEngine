@@ -393,7 +393,7 @@ int main() {
     SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 );
     SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 2);
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,32);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,4);
     SDL_GL_SetSwapInterval(1);
 
     SDL_DisplayMode disp_mode;
@@ -411,9 +411,9 @@ int main() {
     glLoadIdentity();
     glClearColor( 0.0, 0.0, 0.0, 1 );
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glDisable( GL_LINE_SMOOTH );
+/*    glDisable( GL_LINE_SMOOTH );
     glDisable( GL_POLYGON_SMOOTH );
-    glEnable(GL_MULTISAMPLE); 
+    glEnable(GL_MULTISAMPLE); */
 
     load_gl_textures();
  
