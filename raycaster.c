@@ -48,6 +48,7 @@ double *line_heights;
 
 double time = 0; //time of current frame
 double oldTime = 0; //time of previous frame
+double frameTime;
 double moveSpeed;
 double rotSpeed;
 double oldDirX;
@@ -126,7 +127,7 @@ void update() {
      SDL_Event e;
     oldTime = time;
     time = SDL_GetTicks();
-    double frameTime = (time - oldTime) / 1000.0; //frameTime is the time this frame has taken, in seconds
+    frameTime = (time - oldTime) / 1000.0; //frameTime is the time this frame has taken, in seconds
     moveSpeed = frameTime * 3.0; //the constant value is in squares/second
     rotSpeed = frameTime * 2.5; //the constant value is in radians/second
      while (SDL_PollEvent(&e)) {
@@ -400,7 +401,7 @@ int main() {
     SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 2);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,32);
-    SDL_GL_SetSwapInterval(1);
+//    SDL_GL_SetSwapInterval(1);
 
     SDL_DisplayMode disp_mode;
     SDL_GetDesktopDisplayMode(0, &disp_mode);
@@ -425,8 +426,9 @@ int main() {
 
     load_gl_textures();
  
+    char win_title[100];
+
     while(1) {
-       SDL_PumpEvents();
        update();
        SDL_GL_GetDrawableSize(screen, &screen_w, &screen_h);
        glMatrixMode( GL_PROJECTION );
@@ -436,6 +438,8 @@ int main() {
        glLoadIdentity();
        glViewport(0, 0, screen_w, screen_h);
        render();
+       snprintf(win_title,99,"Raycaster test: FPS=%d",((int)(1.0/ frameTime)));
+       SDL_SetWindowTitle(screen,win_title);
        SDL_GL_SwapWindow(screen);
     }
 }
