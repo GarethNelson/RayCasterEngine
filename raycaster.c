@@ -127,7 +127,7 @@ void update() {
     oldTime = time;
     time = SDL_GetTicks();
     double frameTime = (time - oldTime) / 1000.0; //frameTime is the time this frame has taken, in seconds
-    moveSpeed = frameTime * 15.0; //the constant value is in squares/second
+    moveSpeed = frameTime * 3.0; //the constant value is in squares/second
     rotSpeed = frameTime * 2.5; //the constant value is in radians/second
      while (SDL_PollEvent(&e)) {
         switch(e.type) {
@@ -156,7 +156,7 @@ void render() {
           glVertex2f(screen_w,(float)y);
          glEnd();
      }
-/*     for(int y=(screen_h/2); y < screen_h; y++) {
+     for(int y=(screen_h/2); y < screen_h; y++) {
          float line_alpha = (float)y;
          line_alpha -= (screen_h/2);
          glBegin(GL_LINES);
@@ -164,7 +164,7 @@ void render() {
           glVertex2f(0,(float)y);
           glVertex2f(screen_w,(float)y);
          glEnd();
-     } */
+     } 
 /*     glEnable(GL_TEXTURE_2D);
      glBindTexture(GL_TEXTURE_2D, textures[7]);
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
@@ -176,8 +176,6 @@ void render() {
             glTexCoord2f(screen_w/256, (screen_h/2)/256); glVertex2f(screen_w,  screen_h );
             glTexCoord2f(0.0f, (screen_h/2)/256); glVertex2f(0,  screen_h );
      glEnd();*/
-     glDisable(GL_TEXTURE_2D);
-     glDisable(GL_BLEND);
 
      for(int x=0; x < screen_w; x++) {
    double cameraX = 2 * x / ((double)screen_w) - 1; //x-coordinate in camera space
@@ -368,7 +366,9 @@ glBindTexture(GL_TEXTURE_2D, textures[7]);
 
 
 //          glTexCoord2f(floorTexX,floorTexY); glVertex2f(x,y);
+        glColor3f(0.8,0.8,0.8);
         glTexCoord2f(currentFloorX,currentFloorY); glVertex2f(x,y);
+        glTexCoord2f(currentFloorX,currentFloorY); glVertex2f(x,screen_h-y);
       }
       glEnd(); 
 
@@ -405,8 +405,8 @@ int main() {
     SDL_DisplayMode disp_mode;
     SDL_GetDesktopDisplayMode(0, &disp_mode);
     
-    screen = SDL_CreateWindow("Raycasting test",SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,disp_mode.w,disp_mode.h,
-                                              SDL_WINDOW_OPENGL|SDL_WINDOW_FULLSCREEN_DESKTOP);
+    screen = SDL_CreateWindow("Raycasting test",SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,640,480,
+                                              SDL_WINDOW_OPENGL);
     SDL_GL_GetDrawableSize(screen, &screen_w, &screen_h);
 
     draw_ends = malloc(sizeof(double)*screen_w);
