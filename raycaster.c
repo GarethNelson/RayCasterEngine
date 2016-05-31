@@ -51,6 +51,8 @@ double moveSpeed;
 double rotSpeed;
 double oldDirX;
 double oldPlaneX;
+double current_dists[1200];
+double current_weights[1200];
 #define true 1
 #define false 0 
 SDL_Window *screen;
@@ -61,6 +63,7 @@ SDL_GLContext glcontext;
 #define bright_adjust 1.2
 
 unsigned int textures[9];
+int unclean=1;
 
 int worldMap[mapWidth][mapHeight]=
 {
@@ -95,10 +98,12 @@ void handle_key_event(SDL_Event *e) {
      if(keystate[SDL_GetScancodeFromKey(SDLK_UP)]) {
          if(worldMap[(int)(posX + dirX * moveSpeed)][(int)posY] == false) posX += dirX * moveSpeed;
          if(worldMap[((int)posX)][(int)(posY + dirY * moveSpeed)] == false) posY += dirY * moveSpeed;
+         unclean=1;
      }
      if(keystate[SDL_GetScancodeFromKey(SDLK_DOWN)]) {
          if(worldMap[(int)(posX - dirX * moveSpeed)][(int)(posY)] == false) posX -= dirX * moveSpeed;
          if(worldMap[(int)(posX)][(int)(posY - dirY * moveSpeed)] == false) posY -= dirY * moveSpeed;
+         unclean=1;
      }
      if(keystate[SDL_GetScancodeFromKey(SDLK_LEFT)]) {
        oldDirX = dirX;
@@ -107,6 +112,7 @@ void handle_key_event(SDL_Event *e) {
       oldPlaneX = planeX;
       planeX = planeX * cos(rotSpeed) - planeY * sin(rotSpeed);
       planeY = oldPlaneX * sin(rotSpeed) + planeY * cos(rotSpeed);
+      unclean=1;
      }
      if(keystate[SDL_GetScancodeFromKey(SDLK_RIGHT)]) {
       oldDirX = dirX;
@@ -115,6 +121,7 @@ void handle_key_event(SDL_Event *e) {
        oldPlaneX = planeX;
       planeX = planeX * cos(-rotSpeed) - planeY * sin(-rotSpeed);
       planeY = oldPlaneX * sin(-rotSpeed) + planeY * cos(-rotSpeed);
+      unclean=1;
       }
      
 }
@@ -132,6 +139,12 @@ void update() {
            case SDL_QUIT:
               exit(0);
            break;
+           case SDL_WINDOWEVENT:
+              for(int i=0; i<1200; i++) {
+                 current_dists[i]   = screen_h / (2.0 * i - screen_h);
+              }
+              unclean=1;
+           break;
         }
 
      }
@@ -139,6 +152,8 @@ void update() {
 }
 
 void render() {
+     if(unclean==0) return;
+     unclean=0;
      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_ACCUM_BUFFER_BIT);
      glLoadIdentity();
 
@@ -347,25 +362,22 @@ glBindTexture(GL_TEXTURE_2D, textures[7]);
 
      glBegin(GL_POINTS);
      for(int y = drawEnd + 1; y < screen_h; y++) {
-        currentDist = screen_h / (2.0 * y - screen_h); //you could make a small lookup table for this instead
+        currentDist = current_dists[y];
 
         weight = (currentDist - distPlayer) / (distWall - distPlayer);
 
         double currentFloorX = weight * floorXWall + (1.0 - weight) * posX;
         double currentFloorY = weight * floorYWall + (1.0 - weight) * posY;
 
-        int floorTexX, floorTexY;
-        floorTexX = (((int)currentFloorX)%256) * 256;
-        floorTexY = (((int)currentFloorY)%256) * 256;
 
 
 //          glTexCoord2f(floorTexX,floorTexY); glVertex2f(x,y);
-        glColor3f(0.8,0.8,0.8);
+        glColor3f(0.6,0.6,0.6);
         glTexCoord2f(currentFloorX,currentFloorY); glVertex2f(x,y);
+        glColor3f(1.0,1.0,1.0);
         glTexCoord2f(currentFloorX,currentFloorY); glVertex2f(x,screen_h-y);
       }
       glEnd(); 
-
     
      }
      glDisable(GL_TEXTURE_2D);
@@ -415,13 +427,15 @@ int main() {
     glDisable( GL_POLYGON_SMOOTH );
     glEnable(GL_MULTISAMPLE); */
 
+
     load_gl_textures();
  
     char win_title[100];
 
     while(1) {
-       update();
        SDL_GL_GetDrawableSize(screen, &screen_w, &screen_h);
+       update();
+
        glMatrixMode( GL_PROJECTION );
        glLoadIdentity();
        glOrtho( 0.0, screen_w, screen_h, 0.0, 1.0, -1.0 );
