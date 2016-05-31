@@ -43,6 +43,9 @@ double posX = 22, posY = 12;  //x and y start position
 double dirX = -1, dirY = 0; //initial direction vector
 double planeX = 0, planeY = 0.66; //the 2d raycaster version of camera plane
 
+double *draw_ends;
+double *line_heights;
+
 double time = 0; //time of current frame
 double oldTime = 0; //time of previous frame
 double moveSpeed;
@@ -252,6 +255,7 @@ void render() {
       if(side == 0 && rayDirX > 0) texX = 256 - texX - 1;
       if(side == 1 && rayDirY < 0) texX = 256 - texX - 1; 
 
+      
 
       glDisable(GL_BLEND);
       glLineWidth(1.0);
@@ -296,22 +300,15 @@ glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
             glColor4f(0.9,0.9,0.9,col_adjust);
             glTexCoord2f(texX/256.0f, 1.0f); glVertex2f(x,  drawEnd);
 
-/*          glTexCoord2f(texX,0);
-          glColor4f(0.9,0.9,0.9,((float)lineHeight/screen_h)*bright_adjust);
-          glVertex2f(x,drawStart);
-
-          glTexCoord2f(texX,128);
-          glColor4f(1.0,1.0,1.0,((float)lineHeight/screen_h)*bright_adjust);
-          glVertex2f(x,drawStart + ((drawEnd-drawStart)/2));
-
-          glColor4f(1.0,1.0,1.0,((float)lineHeight/screen_h)*bright_adjust);
-          glVertex2f(x,drawStart + ((drawEnd-drawStart)/2));
-
-          glColor4f(0.9,0.9,0.9,((float)lineHeight/screen_h)*bright_adjust);
-          glVertex2f(x,drawEnd);*/
          glEnd();
+         draw_ends[x] = drawEnd;
+         line_heights[x] = lineHeight;
+         glDisable(GL_TEXTURE_2D); 
+     
+
+    
      }
-     glDisable(GL_TEXTURE_2D);
+
 }
 
 void load_gl_textures() {
@@ -346,7 +343,8 @@ int main() {
                                               SDL_WINDOW_OPENGL|SDL_WINDOW_FULLSCREEN_DESKTOP);
     SDL_GL_GetDrawableSize(screen, &screen_w, &screen_h);
 
-
+    draw_ends = malloc(sizeof(double)*screen_w);
+    line_heights = malloc(sizeof(double)*screen_w);
     glcontext = SDL_GL_CreateContext(screen);
     glMatrixMode( GL_PROJECTION );
     glLoadIdentity();
