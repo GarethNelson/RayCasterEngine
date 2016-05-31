@@ -406,7 +406,7 @@ int main() {
     SDL_GetDesktopDisplayMode(0, &disp_mode);
     
     screen = SDL_CreateWindow("Raycasting test",SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,640,480,
-                                              SDL_WINDOW_OPENGL);
+                                              SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE);
     SDL_GL_GetDrawableSize(screen, &screen_w, &screen_h);
 
     draw_ends = malloc(sizeof(double)*screen_w);
@@ -428,6 +428,13 @@ int main() {
     while(1) {
        SDL_PumpEvents();
        update();
+       SDL_GL_GetDrawableSize(screen, &screen_w, &screen_h);
+       glMatrixMode( GL_PROJECTION );
+       glLoadIdentity();
+       glOrtho( 0.0, screen_w, screen_h, 0.0, 1.0, -1.0 );
+       glMatrixMode( GL_MODELVIEW );
+       glLoadIdentity();
+       glViewport(0, 0, screen_w, screen_h);
        render();
        SDL_GL_SwapWindow(screen);
     }
