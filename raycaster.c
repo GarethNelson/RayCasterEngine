@@ -64,6 +64,7 @@ SDL_GLContext glcontext;
 
 unsigned int textures[9];
 int unclean=1;
+GLuint floor_prog;
 
 int worldMap[mapWidth][mapHeight]=
 {
@@ -360,8 +361,16 @@ glBindTexture(GL_TEXTURE_2D, textures[7]);
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
 
-     glBegin(GL_POINTS);
-     for(int y = drawEnd + 1; y < screen_h; y++) {
+        glUniform1i(glGetUniformLocation(floor_prog,"tex"),0);
+     glUniform1f(glGetUniformLocation(floor_prog,"screen_h"),(float)screen_h);
+     glUniform1f(glGetUniformLocation(floor_prog,"floorXWall"),floorXWall);
+     glUniform1f(glGetUniformLocation(floor_prog,"floorYWall"),floorYWall);
+     glUniform1f(glGetUniformLocation(floor_prog,"distWall"),distWall);
+     glUniform1f(glGetUniformLocation(floor_prog,"posX"),posX);
+     glUniform1f(glGetUniformLocation(floor_prog,"posY"),posY);
+     
+     glUseProgram(floor_prog);
+    /* for(int y = drawEnd + 1; y < screen_h; y++) {
         currentDist = current_dists[y];
 
         weight = (currentDist - distPlayer) / (distWall - distPlayer);
@@ -371,15 +380,17 @@ glBindTexture(GL_TEXTURE_2D, textures[7]);
 
 
 
-//          glTexCoord2f(floorTexX,floorTexY); glVertex2f(x,y);
         glColor3f(0.6,0.6,0.6);
         glTexCoord2f(currentFloorX,currentFloorY); glVertex2f(x,y);
         glColor3f(1.0,1.0,1.0);
         glTexCoord2f(currentFloorX,currentFloorY); glVertex2f(x,screen_h-y);
-      }
+      }*/
+      glBegin(GL_LINES);
+        glVertex2f(x,drawEnd+1);
+        glVertex2f(x,screen_h);
       glEnd(); 
-    
      }
+     glUseProgram(0);
      glDisable(GL_TEXTURE_2D);
 }
 
@@ -393,6 +404,59 @@ void load_gl_textures() {
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
      }
+}
+
+void load_gl_shaders() {
+  GLuint floor_shader = glCreateShader(GL_FRAGMENT_SHADER);
+     char* floor_shader_src =
+"uniform sampler2D tex;"
+"uniform float screen_h;"
+"uniform float floorXWall;"
+"uniform float floorYWall;"
+"uniform float distWall;"
+"uniform float posX;"
+"uniform float posY;"
+""
+"void main() {"
+"     float currentDist = screen_h / (2.0 * gl_FragCoord.y - screen_h);"
+"     float weight = currentDist / distWall;"
+"     float cur_floor_x = weight * floorXWall + (1.0 - weight) * posX;"
+"     float cur_floor_y = weight * floorYWall + (1.0 - weight) * posY;"
+"     gl_FragColor=texture2D(tex,vec2(cur_floor_x,cur_floor_y));"
+"}";
+     GLuint _err;
+     int _len = strlen(floor_shader_src);
+     glShaderSource(floor_shader,1,&floor_shader_src,&_len);
+     _err = glGetError();
+     if(_err != GL_NO_ERROR) {
+        printf("Error compiling shader in glShaderSource %s\n",(char*)gluErrorString(_err));
+        GLint maxLength = 0;
+	glGetShaderiv(floor_shader, GL_INFO_LOG_LENGTH, &maxLength);
+        char* infolog = (char*)malloc(maxLength);
+        printf("%s\n",infolog);
+     }
+     glCompileShader(floor_shader);
+     _err = glGetError();
+     if(_err != GL_NO_ERROR) {
+        printf("Error compiling shader in glCompileShader %d\n",_err);
+     }
+     floor_prog = glCreateProgram();
+     _err = glGetError();
+     if(_err != GL_NO_ERROR) {
+        printf("Error compiling shader in glCreateProgram %d\n",_err);
+     }
+     glAttachShader(floor_prog,floor_shader);
+     _err = glGetError();
+     if(_err != GL_NO_ERROR) {
+        printf("Error compiling shader in glAttachShader %d\n",_err);
+     }
+     glLinkProgram(floor_prog);
+     _err = glGetError();
+     if(_err != GL_NO_ERROR) {
+        printf("Error compiling shader in glLinkProgram %d\n",_err);
+     }
+
+
 }
 
 int main() {
@@ -429,9 +493,9 @@ int main() {
 
 
     load_gl_textures();
+    load_gl_shaders();
  
     char win_title[100];
-
     while(1) {
        SDL_GL_GetDrawableSize(screen, &screen_w, &screen_h);
        update();
@@ -443,6 +507,10 @@ int main() {
        glLoadIdentity();
        glViewport(0, 0, screen_w, screen_h);
        render();
+       GLenum err = GL_NO_ERROR;
+       while((err = glGetError()) != GL_NO_ERROR) {
+          printf("%d\n",err);
+       }
        snprintf(win_title,99,"Raycaster test: FPS=%d",((int)(1.0/ frameTime)));
        SDL_SetWindowTitle(screen,win_title);
        SDL_GL_SwapWindow(screen);
