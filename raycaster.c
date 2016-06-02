@@ -367,7 +367,7 @@ glBindTexture(GL_TEXTURE_2D, textures[7]);
      
      glBegin(GL_LINES);
      y=drawEnd+1;
-//     for(int y = drawEnd + 1; y < screen_h; y++) {
+     for(int y = drawEnd + 1; y < screen_h+40; y+=20) {
         currentDist = current_dists[y];
 
         weight = (currentDist - distPlayer) / (distWall - distPlayer);
@@ -380,9 +380,8 @@ glBindTexture(GL_TEXTURE_2D, textures[7]);
         glColor3f(0.6,0.6,0.6);
         glTexCoord2f(currentFloorX,currentFloorY); glVertex2f(x,y);
 
-        y = screen_h;
 
- currentDist = current_dists[y];
+ currentDist = current_dists[y+25];
 
         weight = (currentDist - distPlayer) / (distWall - distPlayer);
 
@@ -392,11 +391,11 @@ glBindTexture(GL_TEXTURE_2D, textures[7]);
 
 
         glColor3f(0.6,0.6,0.6);
-        glTexCoord2f(currentFloorX,currentFloorY); glVertex2f(x,y);
+        glTexCoord2f(currentFloorX,currentFloorY); glVertex2f(x,y+25);
 
 
 
-//      }
+      }
       glEnd();
      }
      glUseProgram(0);
