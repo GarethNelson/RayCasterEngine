@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <SDL.h>
 #include <SOIL.h>
+#include <SDL_image.h>
 #if defined(__APPLE__)
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
@@ -56,6 +57,7 @@ double current_weights[1200];
 #define true 1
 #define false 0 
 SDL_Window *screen;
+SDL_Surface *floor_tex;
 SDL_GLContext glcontext;
 
 #define mapWidth 24
@@ -150,6 +152,24 @@ void update() {
 
      }
 
+}
+
+Uint32 get_pixel32( SDL_Surface *surface, int x, int y )
+{
+    //Convert the pixels to 32 bit
+    Uint32 *pixels = (Uint32 *)surface->pixels;
+    
+    //Get the requested pixel
+    return pixels[ ( y * surface->w ) + x ];
+}
+
+void put_pixel32( SDL_Surface *surface, int x, int y, Uint32 pixel )
+{
+    //Convert the pixels to 32 bit
+    Uint32 *pixels = (Uint32 *)surface->pixels;
+    
+    //Set the pixel
+    pixels[ ( y * surface->w ) + x ] = pixel;
 }
 
 void render() {
@@ -271,9 +291,9 @@ void render() {
       wallX -= floor((wallX));
 
       //x coordinate on the texture
-      double texX = (wallX * 256.0);
-      if(side == 0 && rayDirX > 0) texX = 256 - texX - 1;
-      if(side == 1 && rayDirY < 0) texX = 256 - texX - 1; 
+      double texX = (wallX * 255.0);
+//      if(side == 0 && rayDirX > 0) texX = 256 - texX - 1;
+//      if(side == 1 && rayDirY < 0) texX = 256 - texX - 1; 
 
       
 
@@ -292,30 +312,12 @@ void render() {
 glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
       float col_adjust;
-         glBegin(GL_QUADS);
+         glBegin(GL_LINES);
             col_adjust=((float)lineHeight/screen_h)*4;
 
             glColor4f(0.9,0.9,0.9,col_adjust);
             glTexCoord2f(texX/256.0f, 0.0f); glVertex2f(x, drawStart);
 
-            glColor4f(0.9,0.9,0.9,col_adjust);
-            glTexCoord2f((texX)/256.0f, 0.0f); glVertex2f(x+.5, drawStart );
-
-            glColor4f(1.0,1.0,1.0,col_adjust);
-            glTexCoord2f((texX)/256.0f, 0.5f); glVertex2f(x+.5,  drawEnd-(lineHeight/2) );
-
-            glColor4f(1.0,1.0,1.0,col_adjust);
-            glTexCoord2f(texX/256.0f, 0.5f); glVertex2f(x,  drawEnd-(lineHeight/2) );
-
-
-            glColor4f(1.0,1.0,1.0,col_adjust);
-            glTexCoord2f(texX/256.0f, 0.5f); glVertex2f(x, drawStart+(lineHeight/2));
-
-            glColor4f(1.0,1.0,1.0,col_adjust);
-            glTexCoord2f((texX)/256.0f, 0.5f); glVertex2f(x+.5, drawStart+(lineHeight/2) );
-
-            glColor4f(0.9,0.9,0.9,col_adjust);
-            glTexCoord2f((texX)/256.0f, 1.0f); glVertex2f(x+.5,  drawEnd);
 
             glColor4f(0.9,0.9,0.9,col_adjust);
             glTexCoord2f(texX/256.0f, 1.0f); glVertex2f(x,  drawEnd);
@@ -356,39 +358,46 @@ double distWall, distPlayer, currentDist;
      glDisable(GL_BLEND);
      int y;
      int floorTexX,floorTexY;
+     double currentFloorX,currentFloorY;
      double weight;
 glBindTexture(GL_TEXTURE_2D, textures[7]);
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
 
-        glUniform1i(glGetUniformLocation(floor_prog,"tex"),0);
-     glUniform1f(glGetUniformLocation(floor_prog,"screen_h"),(float)screen_h);
-     glUniform1f(glGetUniformLocation(floor_prog,"floorXWall"),floorXWall);
-     glUniform1f(glGetUniformLocation(floor_prog,"floorYWall"),floorYWall);
-     glUniform1f(glGetUniformLocation(floor_prog,"distWall"),distWall);
-     glUniform1f(glGetUniformLocation(floor_prog,"posX"),posX);
-     glUniform1f(glGetUniformLocation(floor_prog,"posY"),posY);
      
-     glUseProgram(floor_prog);
-    /* for(int y = drawEnd + 1; y < screen_h; y++) {
+     glBegin(GL_LINES);
+     y=drawEnd+1;
+//     for(int y = drawEnd + 1; y < screen_h; y++) {
         currentDist = current_dists[y];
 
         weight = (currentDist - distPlayer) / (distWall - distPlayer);
 
-        double currentFloorX = weight * floorXWall + (1.0 - weight) * posX;
-        double currentFloorY = weight * floorYWall + (1.0 - weight) * posY;
+        currentFloorX = weight * floorXWall + (1.0 - weight) * posX;
+        currentFloorY = weight * floorYWall + (1.0 - weight) * posY;
 
 
 
         glColor3f(0.6,0.6,0.6);
         glTexCoord2f(currentFloorX,currentFloorY); glVertex2f(x,y);
-        glColor3f(1.0,1.0,1.0);
-        glTexCoord2f(currentFloorX,currentFloorY); glVertex2f(x,screen_h-y);
-      }*/
-      glBegin(GL_LINES);
-        glVertex2f(x,drawEnd+1);
-        glVertex2f(x,screen_h);
-      glEnd(); 
+
+        y = screen_h;
+
+ currentDist = current_dists[y];
+
+        weight = (currentDist - distPlayer) / (distWall - distPlayer);
+
+        currentFloorX = weight * floorXWall + (1.0 - weight) * posX;
+        currentFloorY = weight * floorYWall + (1.0 - weight) * posY;
+
+
+
+        glColor3f(0.6,0.6,0.6);
+        glTexCoord2f(currentFloorX,currentFloorY); glVertex2f(x,y);
+
+
+
+//      }
+      glEnd();
      }
      glUseProgram(0);
      glDisable(GL_TEXTURE_2D);
@@ -404,6 +413,7 @@ void load_gl_textures() {
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
      }
+     floor_tex = IMG_Load("texture7.png");
 }
 
 void load_gl_shaders() {
@@ -463,6 +473,7 @@ int main() {
     SDL_InitSubSystem(SDL_INIT_TIMER);
     SDL_InitSubSystem(SDL_INIT_VIDEO);
     SDL_InitSubSystem(SDL_INIT_EVENTS);
+    IMG_Init(IMG_INIT_PNG);
     SDL_GL_SetAttribute( SDL_GL_RED_SIZE, 5 );
     SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 5 );
     SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 5 );
@@ -499,7 +510,6 @@ int main() {
     while(1) {
        SDL_GL_GetDrawableSize(screen, &screen_w, &screen_h);
        update();
-
        glMatrixMode( GL_PROJECTION );
        glLoadIdentity();
        glOrtho( 0.0, screen_w, screen_h, 0.0, 1.0, -1.0 );
