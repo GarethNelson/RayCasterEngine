@@ -66,7 +66,7 @@ SDL_GLContext glcontext;
 
 unsigned int textures[9];
 int unclean=1;
-GLuint depth_prog;
+GLuint floor_prog;
 
 int worldMap[mapWidth][mapHeight]=
 {
@@ -179,7 +179,7 @@ void render() {
      glLoadIdentity();
 
      glEnable(GL_BLEND);
-/*     for(int y=(screen_h/2); y > 0; y--) {
+     for(int y=(screen_h/2); y > 0; y--) {
          glBegin(GL_LINES);
           glColor4f(0.0,0.0,0.5,((float)y/(screen_h/2)*bright_adjust));
           glVertex2f(0,(float)y);
@@ -194,7 +194,7 @@ void render() {
           glVertex2f(0,(float)y);
           glVertex2f(screen_w,(float)y);
          glEnd();
-     } */
+     } 
 /*     glEnable(GL_TEXTURE_2D);
      glBindTexture(GL_TEXTURE_2D, textures[7]);
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
@@ -297,7 +297,7 @@ void render() {
 
       
 
-/*      glDisable(GL_BLEND);
+      glDisable(GL_BLEND);
       glLineWidth(1.0);
       glBegin(GL_LINES);
         glColor3f(0.0,0.0,0.0);
@@ -305,23 +305,22 @@ void render() {
         glVertex2f(x,drawEnd);
       glEnd();
       glEnable(GL_BLEND);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);*/
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
       glEnable(GL_TEXTURE_2D);
       glBindTexture(GL_TEXTURE_2D, textures[worldMap[mapX][mapY]-1]);
 glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-      glUseProgram(depth_prog);
       float col_adjust;
          glBegin(GL_LINES);
             col_adjust=((float)lineHeight/screen_h)*4;
 
-//            glColor4f(0.9,0.9,0.9,col_adjust);
-            glTexCoord2f(texX/256.0f, 0.0f); glVertex3f(x, drawStart,(lineHeight/screen_h)*100.0);
+            glColor4f(0.9,0.9,0.9,col_adjust);
+            glTexCoord2f(texX/256.0f, 0.0f); glVertex2f(x, drawStart);
 
 
-  //          glColor4f(0.9,0.9,0.9,col_adjust);
-            glTexCoord2f(texX/256.0f, 1.0f); glVertex3f(x,  drawEnd,(lineHeight/screen_h)*100.0);
+            glColor4f(0.9,0.9,0.9,col_adjust);
+            glTexCoord2f(texX/256.0f, 1.0f); glVertex2f(x,  drawEnd);
 
          glEnd();
 //FLOOR CASTING
@@ -399,6 +398,7 @@ glBindTexture(GL_TEXTURE_2D, textures[7]);
       }
       glEnd();
      }
+     glUseProgram(0);
      glDisable(GL_TEXTURE_2D);
 }
 
@@ -416,39 +416,50 @@ void load_gl_textures() {
 }
 
 void load_gl_shaders() {
-  GLuint depth_shader = glCreateShader(GL_FRAGMENT_SHADER);
-     char* depth_shader_src =
+  GLuint floor_shader = glCreateShader(GL_FRAGMENT_SHADER);
+     char* floor_shader_src =
+"uniform sampler2D tex;"
+"uniform float screen_h;"
+"uniform float floorXWall;"
+"uniform float floorYWall;"
+"uniform float distWall;"
+"uniform float posX;"
+"uniform float posY;"
 ""
 "void main() {"
-"     glFragColor = vec4(gl_FragCoord.x,gl_FragCoord.y,gl_FragCoord.z, 1.0f);"
+"     float currentDist = screen_h / (2.0 * gl_FragCoord.y - screen_h);"
+"     float weight = currentDist / distWall;"
+"     float cur_floor_x = weight * floorXWall + (1.0 - weight) * posX;"
+"     float cur_floor_y = weight * floorYWall + (1.0 - weight) * posY;"
+"     gl_FragColor=texture2D(tex,vec2(cur_floor_x,cur_floor_y));"
 "}";
      GLuint _err;
-     int _len = strlen(depth_shader_src);
-     glShaderSource(depth_shader,1,&depth_shader_src,&_len);
+     int _len = strlen(floor_shader_src);
+     glShaderSource(floor_shader,1,&floor_shader_src,&_len);
      _err = glGetError();
      if(_err != GL_NO_ERROR) {
         printf("Error compiling shader in glShaderSource %s\n",(char*)gluErrorString(_err));
         GLint maxLength = 0;
-	glGetShaderiv(depth_shader, GL_INFO_LOG_LENGTH, &maxLength);
+	glGetShaderiv(floor_shader, GL_INFO_LOG_LENGTH, &maxLength);
         char* infolog = (char*)malloc(maxLength);
         printf("%s\n",infolog);
      }
-     glCompileShader(depth_shader);
+     glCompileShader(floor_shader);
      _err = glGetError();
      if(_err != GL_NO_ERROR) {
         printf("Error compiling shader in glCompileShader %d\n",_err);
      }
-     depth_prog = glCreateProgram();
+     floor_prog = glCreateProgram();
      _err = glGetError();
      if(_err != GL_NO_ERROR) {
         printf("Error compiling shader in glCreateProgram %d\n",_err);
      }
-     glAttachShader(depth_prog,depth_shader);
+     glAttachShader(floor_prog,floor_shader);
      _err = glGetError();
      if(_err != GL_NO_ERROR) {
         printf("Error compiling shader in glAttachShader %d\n",_err);
      }
-     glLinkProgram(depth_prog);
+     glLinkProgram(floor_prog);
      _err = glGetError();
      if(_err != GL_NO_ERROR) {
         printf("Error compiling shader in glLinkProgram %d\n",_err);
@@ -480,8 +491,6 @@ int main() {
     glcontext = SDL_GL_CreateContext(screen);
 
     glMatrixMode( GL_PROJECTION );
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
     glLoadIdentity();
     glOrtho( 0.0, screen_w, screen_h, 0.0, 1.0, -1.0 );
     glMatrixMode( GL_MODELVIEW );
@@ -507,7 +516,10 @@ int main() {
        glLoadIdentity();
        glViewport(0, 0, screen_w, screen_h);
        render();
-       
+       GLenum err = GL_NO_ERROR;
+       while((err = glGetError()) != GL_NO_ERROR) {
+          printf("%d\n",err);
+       }
        snprintf(win_title,99,"Raycaster test: FPS=%d",((int)(1.0/ frameTime)));
        SDL_SetWindowTitle(screen,win_title);
        SDL_GL_SwapWindow(screen);
